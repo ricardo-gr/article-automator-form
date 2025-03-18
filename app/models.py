@@ -6,6 +6,7 @@ class ArticleStatus(Enum):
     PENDING = 'Pending'
     GENERATED = 'Generated'
     POSTED = 'Posted'
+    CANCELLED = 'Cancelled'
 
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -24,7 +25,7 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
 
     @classmethod
-    def get_or_create(cls, email, name, picture):
+    def get_or_create(cls, email, name):
         user = cls.query.filter_by(email=email).first()
         if user:
             return user

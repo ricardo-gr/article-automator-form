@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Submission Automated System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .status-pending { color: #ffc107; }
+        .status-generated { color: #17a2b8; }
+        .status-posted { color: #28a745; }
+        .status-cancelled { color: #dc3545; }
+        .delete-icon {
+            cursor: pointer;
+            color: #dc3545;
+            transition: color 0.2s;
+        }
+        .delete-icon:hover {
+            color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Article Submission Automated System</h1>
+        
+        <!-- Submission Form Toggle Button -->
+        <button class="btn btn-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#submissionForm" aria-expanded="false" aria-controls="submissionForm">
+            Submit New Article
+        </button>
+        
+        <!-- Submission Form -->
+        <div class="collapse mb-4" id="submissionForm">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Article Submission Form</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('main.submit') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="url" class="form-label">URL</label>
+                            <input type="url" class="form-control" id="url" name="url" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="user_id" class="form-label">User</label>
+                            <select class="form-select" id="user_id" name="user_id" required>
+                                <option value="">Select a user...</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit Article</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Articles Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Articles List</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>URL</th>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th>Timestamp</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for article in articles %}
+                            <tr>
+                                <td>{{ article.title }}</td>
+                                <td><a href="{{ article.url }}" target="_blank">{{ article.url }}</a></td>
+                                <td>{{ article.user.name }}</td>
+                                <td>
+                                    <span class="status-{{ article.status.value.lower() }}">
+                                        {{ article.status.value }}
+                                    </span>
+                                </td>
+                                <td>{{ article.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    {% if article.status != ArticleStatus.CANCELLED %}
+                                    <i class="bi bi-trash delete-icon" onclick="cancelArticle({{ article.id }})" title="Cancel article"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function cancelArticle(articleId) {
+            if (confirm('Are you sure you want to cancel this article?')) {
+                fetch(`/api/articles/${articleId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while cancelling the article.');
+                });
+            }
+        }
+    </script>
+</body>
+</html> 
