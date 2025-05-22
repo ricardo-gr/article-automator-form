@@ -37,7 +37,7 @@
                     <h5 class="card-title mb-0">Article Submission Form</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url_for('main.submit') }}" method="POST">
+                    <form id="articleForm" onsubmit="submitArticle(event)">
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>
                             <input type="text" class="form-control" id="title" name="title" required>
@@ -45,15 +45,6 @@
                         <div class="mb-3">
                             <label for="url" class="form-label">URL</label>
                             <input type="url" class="form-control" id="url" name="url" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="user_id" class="form-label">User</label>
-                            <select class="form-select" id="user_id" name="user_id" required>
-                                <option value="">Select a user...</option>
-                                {% for user in users %}
-                                <option value="{{ user.id }}">{{ user.name }}</option>
-                                {% endfor %}
-                            </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Submit Article</button>
                     </form>
@@ -118,7 +109,34 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        location.reload();
+                        // Fetch updated articles and update the table
+                        fetch('/api/articles')
+                            .then(response => response.json())
+                            .then(articles => {
+                                const tbody = document.querySelector('table tbody');
+                                tbody.innerHTML = articles.map(article => `
+                                    <tr>
+                                        <td>${article.title}</td>
+                                        <td><a href="${article.url}" target="_blank">${article.url}</a></td>
+                                        <td>${article.user.name}</td>
+                                        <td>
+                                            <span class="status-${article.status.toLowerCase()}">
+                                                ${article.status}
+                                            </span>
+                                        </td>
+                                        <td>${new Date(article.timestamp).toLocaleString()}</td>
+                                        <td>
+                                            ${article.status !== 'Cancelled' ? 
+                                                `<i class="bi bi-trash delete-icon" onclick="cancelArticle(${article.id})" title="Cancel article"></i>` 
+                                                : ''}
+                                        </td>
+                                    </tr>
+                                `).join('');
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('An error occurred while updating the table.');
+                            });
                     }
                 })
                 .catch(error => {
@@ -126,6 +144,30 @@
                     alert('An error occurred while cancelling the article.');
                 });
             }
+        }
+
+        function submitArticle(event) {
+            event.preventDefault();
+            const formData = {
+                title: document.getElementById('title').value,
+                url: document.getElementById('url').value
+            };
+
+            fetch("{{ url_for('main.create_article') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the article.');
+            });
         }
     </script>
 </body>

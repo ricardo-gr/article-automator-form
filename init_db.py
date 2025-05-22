@@ -8,19 +8,22 @@ def init_db():
         # Create tables
         db.create_all()
         
-        # Create dummy user if it doesn't exist
-        dummy_user = User.query.filter_by(email='dev@example.com').first()
-        if not dummy_user:
-            dummy_user = User(
+        # Check if admin user exists
+        admin = User.query.filter_by(email='ricardo@ricardogarciarivera.com').first()
+        if not admin:
+            admin = User(
                 email='ricardo@ricardogarciarivera.com',
-                name='Ricardo García'
+                name='Ricardo García',
+                is_admin=True
             )
-            db.session.add(dummy_user)
+            admin.set_password('admin123')
+            
+            db.session.add(admin)
             db.session.commit()
-            print("Created dummy user")
+            print("Created admin user")
         
         db.session.commit()
-        print("Database initialization completed!")
+        print("Database initialized successfully!")
 
 if __name__ == '__main__':
     init_db() 
